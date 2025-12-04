@@ -1,4 +1,4 @@
-# Projeto SECOMP — Versão Final (segura) 
+# Projeto SECOMP
 
 ## O que há neste repositório
 - `server.js` - servidor Express com Helmet, CSRF, rate-limit, sessões armazenadas em MongoDB, Mongoose.
