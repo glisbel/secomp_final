@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title><%= typeof title !== 'undefined' ? title : 'SECOMP UFRR' %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="container">
+      <a class="brand" href="/">SECOMP</a>
+      <nav class="nav">
+        <a href="/programacao">Programação</a>
+        <a href="/sobre">Sobre</a>
+        <a href="/contato">Contato</a>
+        <% if (!user) { %>
+          <a href="/login">Login</a>
+        <% } else { %>
+          <a href="/profile">Perfil</a>
+          <a href="/logout">Sair</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+  <main class="container">

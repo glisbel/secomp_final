@@ -1,0 +1,11 @@
+<%- include('partials/layout_top') %>
+<section class='card'><h2>Contato</h2>
+<form action='/contact' method='POST'>
+<input type='hidden' name='_csrf' value='<%= csrfToken %>'>
+<input name='name' placeholder='Nome'>
+<input name='email' placeholder='Email'>
+<textarea name='message' placeholder='Mensagem'></textarea>
+<button>Enviar</button>
+</form>
+</section>
+<%- include('partials/layout_bottom') %>

@@ -1,0 +1,3 @@
+<%- include('partials/layout_top') %>
+<section class='profile-card'><img src='https://api.dicebear.com/7.x/identicon/svg?seed=<%= encodeURIComponent(user.email) %>' class='profile-avatar'><h3><%= user.email %></h3><% if (user.is_admin){ %><div class='card'><strong>Administrador</strong></div><% } %><a href='/logout' class='button'>Sair</a></section>
+<%- include('partials/layout_bottom') %>
