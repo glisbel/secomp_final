@@ -1,96 +1,150 @@
-# Projeto SECOMP
+# SECOMP Final — Implementando Defesas Arquiteturais
+
 **Aluno:** Glisbel Aponte  
 **Disciplina:** DCC 704 — Arquitetura e Tecnologias de Sistemas WEB  
-**Professor:** Jean Bertrand
+**Professor:** Jean Bertrand  
 
-## O que há neste repositório
-# Implementando Defesas Arquiteturais
+---
 
 ## Visão Geral
-Este repositório contém a versão final do projeto solicitado na Aula 18, com autenticação, Mongoose e defesas arquiteturais contra XSS, CSRF e força bruta. O trabalho segue as instruções do enunciado do professor. fileciteturn0file0
+
+Este repositório contém a versão final do projeto desenvolvido para a disciplina
+DCC 704, com foco na implementação de **defesas arquiteturais em aplicações web**.
+O sistema foi construído utilizando **Node.js**, **Express** e **MongoDB**, e
+implementa mecanismos de segurança contra **SQL Injection (SQLi)**,
+**Cross-Site Scripting (XSS)**, **Cross-Site Request Forgery (CSRF)**,
+**ataques de força bruta** e **exposição de credenciais sensíveis**.
+
+---
 
 ## Estrutura do Projeto
-```
+
 secomp_final/
 ├── models/
-│   └── User.js
+│ └── User.js
+├── utils/
+│ └── userUtils.js
+├── tests/
+│ └── userUtils.test.js
 ├── views/
-│   ├── index.ejs
-│   ├── login.ejs
-│   ├── profile.ejs
-│   ├── contato.ejs
-│   ├── admin.ejs
-│   └── 404.ejs
+│ ├── index.ejs
+│ ├── login.ejs
+│ ├── profile.ejs
+│ ├── contato.ejs
+│ ├── admin.ejs
+│ └── 404.ejs
 ├── public/
 ├── server.js
 ├── package.json
 ├── .gitignore
 └── README.md
-```
 
-## Dependências principais
-Instale as defesas e utilitários conforme a especificação:
-```bash
-npm install helmet csurf express-rate-limit dotenv connect-mongo express-session mongoose bcrypt
-```
-(Conforme exigido no enunciado). fileciteturn0file0
+yaml
+Copiar código
 
-## Como rodar (local)
-1. Copie `.env.example` para `.env` e preencha:
-```
-SESSION_SECRET=uma_senha_forte_aqui
-MONGO_URI=mongodb+srv://<user>:<pass>@cluster.../secomp_db
-```
-2. Instale dependências:
+---
+
+## Como Executar o Projeto
+
+### 1. Criar o arquivo `.env`
+
+Na raiz do projeto, crie um arquivo chamado `.env` com o seguinte conteúdo:
+
+SESSION_SECRET=uma_senha_forte
+MONGO_URI=mongodb+srv://<usuario>:<senha>@cluster.mongodb.net/secomp_db
+PORT=3000
+
+yaml
+Copiar código
+
+O arquivo `.env` não é versionado e serve para armazenar informações sensíveis.
+
+---
+
+### 2. Instalar as dependências
+
 ```bash
 npm install
-```
-3. Inicie:
-```bash
-node server.js
-```
+3. Iniciar o servidor
+bash
+Copiar código
+npm start
+A aplicação ficará disponível em:
 
----
+arduino
+Copiar código
+http://localhost:3000
+Defesas Arquiteturais Implementadas
+1. Proteção contra SQL Injection (SQLi)
+O projeto utiliza o Mongoose como ODM para acesso ao banco de dados.
+As consultas são realizadas por meio de objetos estruturados, como
+User.findOne({ email }), evitando concatenação de strings e mitigando ataques
+de injeção de comandos.
 
-## Proteções implementadas (mapa para o professor)
+2. Proteção contra Cross-Site Scripting (XSS)
+As views utilizam o mecanismo de escape automático do EJS (<%= %>),
+garantindo que dados fornecidos por usuários sejam renderizados apenas como texto.
+Não é utilizado <%- %> para renderização de entradas de usuário.
 
-### 1) Proteção contra SQL Injection (SQLi)
-- **Motivo / justificativa:** Uso de Mongoose com queries parametrizadas evita concatenação manual de strings e, portanto, mitiga SQLi na camada de persistência (Model e Controller). fileciteturn0file0
-- **Arquivos relevantes:** `models/User.js`, uso de `User.findOne({ email })` em `server.js`. fileciteturn2file0
+3. Proteção contra Força Bruta
+Foi implementado rate limiting com o middleware express-rate-limit.
+A rota POST /login permite no máximo 5 tentativas por minuto,
+bloqueando tentativas excessivas de autenticação.
 
-### 2) Proteção contra Cross-Site Scripting (XSS)
-- **Ação:** Todas as saídas de dados de usuário que aparecem nas views utilizam o mecanismo de escape do EJS (`<%= %>`). Exemplo: `profile.ejs` exibe o email com `<%= user.email %>`. fileciteturn1file4
-- **Observação sobre includes:** Os templates usam `include()` com `<%- include(...) %>` apenas para inserir partes estáticas (layout), não conteúdo vindo diretamente do usuário; isso é documentado no relatório. fileciteturn1file0turn1file7
+4. Proteção contra CSRF
+O middleware csurf foi utilizado para proteção contra Cross-Site Request Forgery.
+Tokens CSRF são incluídos em todos os formulários POST.
+A rota de login foi mantida como exceção, conforme orientação do enunciado.
 
-### 3) Proteção contra Força Bruta (Rate Limiting)
-- **Implementação:** `express-rate-limit` aplicado à rota `POST /login` com janela de 60 segundos e máximo de 5 tentativas. Mensagem configurada: `'Too many login attempts, try again later.'`. fileciteturn2file0
-- **Como testar (pedido do professor):** Fazer 6 requisições POST em menos de 1 minuto para `/login` e observar a mensagem de erro. (Print de tentativa bloqueada incluído no PDF.)
+5. Hardening HTTP e Proteção de Credenciais
+O middleware helmet é utilizado para configurar cabeçalhos HTTP de segurança.
+Credenciais e segredos sensíveis são armazenados em variáveis de ambiente (.env),
+que são ignoradas pelo Git através do arquivo .gitignore.
 
-### 4) Hardening HTTP (Helmet) e Proteção de Credenciais (dotenv)
-- **Helmet:** Middleware aplicado no topo do `server.js` para configurar headers seguros. fileciteturn2file0
-- **dotenv / .env:** Segredos (SESSION_SECRET e MONGO_URI) extraídos de variáveis de ambiente com fallback para desenvolvimento em `server.js`. fileciteturn2file0
+Refatoração e Testes — Aula 24
+Módulo Escolhido
+O módulo selecionado para refatoração foi o módulo de usuários.
 
-### 5) Proteção contra CSRF (Tokens)
-- **Regra aplicada:** CSRF (`csurf`) habilitado para todas as rotas POST **exceto** `POST /login` (exceção conforme enunciado do professor). fileciteturn0file0turn2file0
-- **Forms protegidos:** `contato.ejs` já contém o token:
-```html
-<input type='hidden' name='_csrf' value='<%= csrfToken %>'>
-```
-fileciteturn1file2
-- **Login:** `login.ejs` foi mantido sem token CSRF por ser exceção pedido pelo professor. fileciteturn1file3
+Refatoração
+Foram aplicadas boas práticas de desenvolvimento, incluindo:
 
----
+uso de const
 
-## Trechos importantes do código (explicados)
+arrow functions
 
-### server.js — pontos chave
-- Helmet aplicado antes das rotas. fileciteturn2file0
-- Sessões com `connect-mongo` e cookie `httpOnly` e `sameSite: 'lax'`. fileciteturn2file0
-- Rate limiter configurado e aplicado em POST /login. fileciteturn2file0
-- CSRF configurado com exceção para login; o token é passado para as views através de `res.locals.csrfToken`. fileciteturn2file0
+destructuring
 
----
+redução de aninhamentos condicionais
 
-## Observações e justificativas finais
+melhoria na legibilidade do código
 
-- Em ambiente de produção, recomenda-se ativar `cookie.secure = true` e servir via HTTPS, além de rotinas de rotação de secrets e uso de variáveis de ambiente seguras.
+A lógica foi separada em funções puras no arquivo utils/userUtils.js.
+
+Testes Unitários
+Foram implementados testes unitários utilizando Jest, cobrindo:
+
+validação de e-mail
+
+validação de senha forte
+
+casos de sucesso e erro
+
+Para executar os testes:
+
+bash
+Copiar código
+npm test
+Observações Finais
+Em ambiente de produção, recomenda-se:
+
+ativar cookie.secure = true
+
+utilizar HTTPS
+
+restringir IPs permitidos no MongoDB Atlas
+
+utilizar segredos mais robustos e rotativos
+
+Repositório
+
+https://github.com/glisbel/secomp_final
