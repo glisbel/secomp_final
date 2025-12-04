@@ -1,30 +1,96 @@
 # Projeto SECOMP
+**Aluno:** Glisbel Aponte  
+**Disciplina:** DCC 704 — Arquitetura e Tecnologias de Sistemas WEB  
+**Professor:** Jean Bertrand
 
 ## O que há neste repositório
-- `server.js` - servidor Express com Helmet, CSRF, rate-limit, sessões armazenadas em MongoDB, Mongoose.
-- `models/User.js` - modelo Mongoose para usuários.
-- `views/` - páginas EJS estilizadas e parciais de layout.
-- `public/css/style.css` - CSS para as páginas.
-- `.env.example` - exemplo de variáveis de ambiente.
-- `package.json` - dependências.
+# Implementando Defesas Arquiteturais
 
-## Instruções para rodar (local)
-1. Instale Node.js e MongoDB (ou use Atlas).
-2. Copie `.env.example` para `.env` e edite `SESSION_SECRET` e `MONGO_URI`.
-3. No diretório do projeto:
-   ```bash
-   npm install
-   npm start
-   ```
-4. Abra `http://localhost:3000`
+## Visão Geral
+Este repositório contém a versão final do projeto solicitado na Aula 18, com autenticação, Mongoose e defesas arquiteturais contra XSS, CSRF e força bruta. O trabalho segue as instruções do enunciado do professor. fileciteturn0file0
 
-Usuário admin seeded: **admin@ufrr.br / Admin@123**
+## Estrutura do Projeto
+```
+secomp_final/
+├── models/
+│   └── User.js
+├── views/
+│   ├── index.ejs
+│   ├── login.ejs
+│   ├── profile.ejs
+│   ├── contato.ejs
+│   ├── admin.ejs
+│   └── 404.ejs
+├── public/
+├── server.js
+├── package.json
+├── .gitignore
+└── README.md
+```
 
-## Testes rápidos (evidências)
-- CSRF: formulário `/contato` contém `<input name="_csrf">`.
-- Rate-limit: `POST /login` limitado (5 tentativas/min).
-- Helmet: cabeçalhos de segurança presentes (`curl -I http://localhost:3000`).
-- Sessões: guardadas em MongoDB via `connect-mongo`.
+## Dependências principais
+Instale as defesas e utilitários conforme a especificação:
+```bash
+npm install helmet csurf express-rate-limit dotenv connect-mongo express-session mongoose bcrypt
+```
+(Conforme exigido no enunciado). fileciteturn0file0
 
-## Notas
-Não comite `.env` com segredos. Em produção ative `cookie.secure: true` e HTTPS.
+## Como rodar (local)
+1. Copie `.env.example` para `.env` e preencha:
+```
+SESSION_SECRET=uma_senha_forte_aqui
+MONGO_URI=mongodb+srv://<user>:<pass>@cluster.../secomp_db
+```
+2. Instale dependências:
+```bash
+npm install
+```
+3. Inicie:
+```bash
+node server.js
+```
+
+---
+
+## Proteções implementadas (mapa para o professor)
+
+### 1) Proteção contra SQL Injection (SQLi)
+- **Motivo / justificativa:** Uso de Mongoose com queries parametrizadas evita concatenação manual de strings e, portanto, mitiga SQLi na camada de persistência (Model e Controller). fileciteturn0file0
+- **Arquivos relevantes:** `models/User.js`, uso de `User.findOne({ email })` em `server.js`. fileciteturn2file0
+
+### 2) Proteção contra Cross-Site Scripting (XSS)
+- **Ação:** Todas as saídas de dados de usuário que aparecem nas views utilizam o mecanismo de escape do EJS (`<%= %>`). Exemplo: `profile.ejs` exibe o email com `<%= user.email %>`. fileciteturn1file4
+- **Observação sobre includes:** Os templates usam `include()` com `<%- include(...) %>` apenas para inserir partes estáticas (layout), não conteúdo vindo diretamente do usuário; isso é documentado no relatório. fileciteturn1file0turn1file7
+
+### 3) Proteção contra Força Bruta (Rate Limiting)
+- **Implementação:** `express-rate-limit` aplicado à rota `POST /login` com janela de 60 segundos e máximo de 5 tentativas. Mensagem configurada: `'Too many login attempts, try again later.'`. fileciteturn2file0
+- **Como testar (pedido do professor):** Fazer 6 requisições POST em menos de 1 minuto para `/login` e observar a mensagem de erro. (Print de tentativa bloqueada incluído no PDF.)
+
+### 4) Hardening HTTP (Helmet) e Proteção de Credenciais (dotenv)
+- **Helmet:** Middleware aplicado no topo do `server.js` para configurar headers seguros. fileciteturn2file0
+- **dotenv / .env:** Segredos (SESSION_SECRET e MONGO_URI) extraídos de variáveis de ambiente com fallback para desenvolvimento em `server.js`. fileciteturn2file0
+
+### 5) Proteção contra CSRF (Tokens)
+- **Regra aplicada:** CSRF (`csurf`) habilitado para todas as rotas POST **exceto** `POST /login` (exceção conforme enunciado do professor). fileciteturn0file0turn2file0
+- **Forms protegidos:** `contato.ejs` já contém o token:
+```html
+<input type='hidden' name='_csrf' value='<%= csrfToken %>'>
+```
+fileciteturn1file2
+- **Login:** `login.ejs` foi mantido sem token CSRF por ser exceção pedido pelo professor. fileciteturn1file3
+
+---
+
+## Trechos importantes do código (explicados)
+
+### server.js — pontos chave
+- Helmet aplicado antes das rotas. fileciteturn2file0
+- Sessões com `connect-mongo` e cookie `httpOnly` e `sameSite: 'lax'`. fileciteturn2file0
+- Rate limiter configurado e aplicado em POST /login. fileciteturn2file0
+- CSRF configurado com exceção para login; o token é passado para as views através de `res.locals.csrfToken`. fileciteturn2file0
+
+---
+
+## Observações e justificativas finais
+
+- Em ambiente de produção, recomenda-se ativar `cookie.secure = true` e servir via HTTPS, além de rotinas de rotação de secrets e uso de variáveis de ambiente seguras.
