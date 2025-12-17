@@ -11,6 +11,9 @@ const path = require('path');
 
 const User = require('./models/User');
 
+const { isValidEmail, isStrongPassword } = require('./utils/userUtils');
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -67,24 +70,32 @@ function isAuth(req,res,next){ if(req.session && req.session.user) return next()
 function isAdmin(req,res,next){ if(req.session && req.session.user && req.session.user.is_admin) return next(); res.status(403).send('Forbidden'); }
 
 /* Routes */
-app.get('/', (req,res)=> res.render('index'));
-app.get('/programacao', (req,res)=> res.render('programacao-oficial-secomp-ufrr-2024'));
-app.get('/sobre', (req,res)=> res.render('sobre-a-secomp-ufrr'));
-app.get('/contato', (req,res)=> res.render('contato'));
+app.post('/login', loginLimiter, async (req, res) => {
+  const { email, password } = req.body;
 
-app.get('/login', (req,res)=> res.render('login'));
-app.post('/login', loginLimiter, async (req,res)=>{
-  const { email, password } = req.body || {};
-  if(!email || !password) return res.status(400).send('Missing');
-  try {
-    const user = await User.findOne({ email }).exec();
-    if(!user) return res.status(401).send('Invalid');
-    const ok = await bcrypt.compare(password, user.password_hash);
-    if(!ok) return res.status(401).send('Invalid');
-    req.session.user = { id: user._id.toString(), email: user.email, is_admin: user.is_admin };
-    res.redirect('/profile');
-  } catch(e){ console.error(e); res.status(500).send('Server error'); }
+  if (!isValidEmail(email) || !isStrongPassword(password)) {
+    return res.status(400).send('Dados inválidos');
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(401).send('Credenciais inválidas');
+  }
+
+  const passwordOk = await bcrypt.compare(password, user.password_hash);
+  if (!passwordOk) {
+    return res.status(401).send('Credenciais inválidas');
+  }
+
+  req.session.user = {
+    id: user._id.toString(),
+    email: user.email,
+    is_admin: user.is_admin
+  };
+
+  res.redirect('/profile');
 });
+
 
 app.get('/logout', (req,res)=> {
   req.session.destroy(()=> { res.clearCookie('connect.sid'); res.redirect('/'); });
